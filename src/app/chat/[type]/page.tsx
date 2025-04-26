@@ -48,21 +48,15 @@ const AUDIT_TYPES = [
   },
 ];
 
-const IDEA_CONTEXT = `You are an expert product consultant. When a user describes a new app idea, respond using the following structure:
-
-**Just an Idea:**
-Summarize the user's idea in your own words.
-
-**Solution:**
-Describe a possible solution or approach to realize the idea.
-
-**Artefact:**
-List the main deliverables or features that would be created.
-
-**Outcome:**
-Describe the expected impact or value for the user/client.
-
-Format your response in markdown with clear headings for each section.`;
+const IDEA_CONTEXT = `You are an expert product consultant. When a user describes a new app idea, create Solution artefact based on client brief with this structure:
+1. User Experience (UX) Observations
+2. User Interface (UI) Observations
+3. Proposed Solutions
+4. Scope of Work (SOW)
+5. Competition list with small description about each one
+6. Tech Stack - what tools will be potential useful
+7. Estimation
+8. Final Notes`;
 
 const UX_AUDIT_CONTEXT = (
   hasVideo: boolean
@@ -70,20 +64,20 @@ const UX_AUDIT_CONTEXT = (
   hasVideo
     ? ", and a video is attached, analyze the user experience and flows shown in the video as well as the text"
     : ""
-}. Respond using the following structure:
+}. 
 
-**UX Audit:**
-Summarize the main UX issues or opportunities based on the user's input${
+Create Solution artefact based on client video with this structure:
+1. UX/UI Audit Outcome Report Template, summarize the main UX issues or opportunities based on the user's input${
   hasVideo ? " and the video" : ""
-}.
-
-**Artefact:**
-List the main deliverables or recommendations you would provide as part of the audit.
-
-**Outcome:**
-Describe the expected impact or value for the user/client if these recommendations are implemented.
-
-Format your response in markdown with clear headings for each section.`;
+}
+2. Highlighted UX/UI Problems
+3. Full Heuristic Evaluation Table (Extended) 
+4. Key Recommendations
+5. Priority Improvements (Action Plan)
+6. Competition list with small description about each one
+7. Suggested Scope of Work 
+8. Final Notes
+`;
 
 const UI_AUDIT_CONTEXT = (
   hasVideo: boolean
@@ -91,20 +85,19 @@ const UI_AUDIT_CONTEXT = (
   hasVideo
     ? ", and a video is attached, analyze the user interface and flows shown in the video as well as the text"
     : ""
-}. Respond using the following structure:
-
-**UI Audit:**
-Summarize the main UI issues or opportunities based on the user's input${
-  hasVideo ? " and the video" : ""
 }.
 
-**Artefact:**
-List the main deliverables or recommendations you would provide as part of the audit.
-
-**Outcome:**
-Describe the expected impact or value for the user/client if these recommendations are implemented.
-
-Format your response in markdown with clear headings for each section.`;
+Create Solution artefact based on client brief with this structure:
+1. UI/Visual Design Audit — For Existing Project Redesign Proposal, summarize the main UI issues or opportunities based on the user's input${
+  hasVideo ? " and the video" : ""
+}
+2. Audit Objective
+3. Visual Brand Identity Evaluation
+4. Layout, Structure, and Spacing Evaluation
+5. Emotional Connection and Experience
+6. Color, Typography, and Accessibility Audit
+7. Key Redesign Priorities
+8. Suggested Scope of Work for Visual Redesign`;
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
