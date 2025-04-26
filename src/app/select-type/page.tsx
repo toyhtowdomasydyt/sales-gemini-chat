@@ -56,7 +56,10 @@ export default function SelectTypePage() {
 
   const handleSelectType = (type: ClientType) => {
     if (!client) return;
-    const updatedClient = { ...client, type, updatedAt: new Date() };
+    // Always clear auditType when changing type
+    const updatedClient = { ...client, type };
+    delete updatedClient.auditType;
+    updatedClient.updatedAt = new Date();
     localStorage.setItem("currentClient", JSON.stringify(updatedClient));
     // Update in clients list as well
     const clients = JSON.parse(localStorage.getItem("clients") || "[]");
@@ -65,7 +68,11 @@ export default function SelectTypePage() {
       clients[idx] = updatedClient;
       localStorage.setItem("clients", JSON.stringify(clients));
     }
-    router.push(`/chat/${type}`);
+    if (type === "new_idea") {
+      router.push(`/chat/new_idea`);
+    } else {
+      router.push(`/chat/improvement`);
+    }
   };
 
   if (!client)

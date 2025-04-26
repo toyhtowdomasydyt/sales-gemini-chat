@@ -24,7 +24,7 @@ const AUDIT_TYPES = [
         </svg>
       </span>
     ),
-    brief: `Please provide the following information about your app's UI requirements:\n1. What is the main purpose of your app?\n2. Who are your target users?\n3. What are the key features you want to include?\n4. Do you have any specific design preferences or inspiration?\n5. What platforms will your app support (web, mobile, both)?`,
+    brief: `Please provide the information about your app's UI requirements`,
   },
   {
     key: "ux",
@@ -44,7 +44,7 @@ const AUDIT_TYPES = [
         </svg>
       </span>
     ),
-    brief: `Please provide the following information about your app's UX requirements:\n1. What are the main user flows you want to implement?\n2. What are the key user interactions?\n3. How do you want users to navigate through your app?\n4. What are the main pain points you want to address?\n5. Do you have any specific accessibility requirements?`,
+    brief: `Please provide the information about your app's UX requirements`,
   },
   {
     key: "general",
@@ -65,7 +65,7 @@ const AUDIT_TYPES = [
         </svg>
       </span>
     ),
-    brief: `Please provide the following information about your app:\n1. What is the main problem your app solves?\n2. Who are your target users?\n3. What are your main competitors?\n4. What makes your app unique?\n5. What are your main technical requirements?`,
+    brief: `Please provide the information about your app's General requirements`,
   },
 ];
 
@@ -79,7 +79,6 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load client and chat history on mount
@@ -93,7 +92,32 @@ export default function ChatPage() {
         `chatHistory:${parsedClient.id}`
       );
       if (chatHistory) {
-        setMessages(JSON.parse(chatHistory));
+        const parsedHistory = JSON.parse(chatHistory);
+        setMessages(parsedHistory);
+        // If new_idea and no chat history, show a custom welcome message
+        if (parsedClient.type === "new_idea" && parsedHistory.length === 0) {
+          setMessages([
+            {
+              id: Date.now().toString(),
+              clientId: parsedClient.id,
+              role: "assistant",
+              content:
+                "Welcome! Please describe your new app idea. Share as much detail as you can about the concept, goals, and any features you have in mind. I'll help you shape your idea into a great product!",
+              createdAt: new Date(),
+            },
+          ]);
+        }
+      } else if (parsedClient.type === "new_idea") {
+        setMessages([
+          {
+            id: Date.now().toString(),
+            clientId: parsedClient.id,
+            role: "assistant",
+            content:
+              "Welcome! Please describe your new app idea. Share as much detail as you can about the concept, goals, and any features you have in mind. I'll help you shape your idea into a great product!",
+            createdAt: new Date(),
+          },
+        ]);
       }
       // Set auditType if present
       if (parsedClient.auditType) setAuditType(parsedClient.auditType);
@@ -150,12 +174,6 @@ export default function ChatPage() {
     setMessages([initialMessage]);
   };
 
-  const handleCopy = async (brief: string, type: AuditType) => {
-    await navigator.clipboard.writeText(brief);
-    setCopied(type);
-    setTimeout(() => setCopied(null), 1200);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !client) return;
@@ -194,12 +212,34 @@ export default function ChatPage() {
     }
   };
 
+  // Remove auditType from client when new project idea is selected
+  useEffect(() => {
+    if (client && client.type === "new_idea" && client.auditType) {
+      const updatedClient = { ...client };
+      delete updatedClient.auditType;
+      setClient(updatedClient);
+      localStorage.setItem("currentClient", JSON.stringify(updatedClient));
+      // Update in clients list
+      const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+      const idx = clients.findIndex((c: Client) => c.id === client.id);
+      if (idx !== -1) {
+        clients[idx] = updatedClient;
+        localStorage.setItem("clients", JSON.stringify(clients));
+      }
+    }
+    // eslint-disable-next-line
+  }, [client && client.type === "new_idea"]);
+
+  // Only show audit type selection for 'improvement' type and if auditType is not set
+  const shouldShowAuditTypeSelection =
+    client?.type === "improvement" && !auditType;
+
   if (!client) {
     return <div>Loading...</div>;
   }
 
   // Header
-  if (client.type === "new_idea" && !auditType) {
+  if (shouldShowAuditTypeSelection) {
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="flex items-center justify-between px-8 py-6 border-b bg-white">
@@ -243,17 +283,6 @@ export default function ChatPage() {
                     {type.title}
                   </div>
                   <div className="text-gray-500 mb-1">{type.subtitle}</div>
-                  <button
-                    className="text-xs text-blue-600 hover:underline mt-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopy(type.brief, type.key as AuditType);
-                    }}
-                  >
-                    {copied === type.key
-                      ? "Copied!"
-                      : "Click to copy brief questions to clipboard"}
-                  </button>
                 </div>
               </div>
             ))}

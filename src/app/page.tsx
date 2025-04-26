@@ -34,7 +34,9 @@ export default function Home() {
     if (!chatHistory) {
       localStorage.setItem(`chatHistory:${client.id}`, JSON.stringify([]));
     }
-    if (client.auditType) {
+    if (client.type === "new_idea") {
+      router.push(`/chat/new_idea`);
+    } else if (client.auditType) {
       router.push(`/chat/${client.type}`);
     } else {
       router.push("/select-type");
