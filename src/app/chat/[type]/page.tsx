@@ -64,10 +64,18 @@ Describe the expected impact or value for the user/client.
 
 Format your response in markdown with clear headings for each section.`;
 
-const UX_AUDIT_CONTEXT = `You are an expert UX consultant. When a user describes their existing app and requests a UX audit, respond using the following structure:
+const UX_AUDIT_CONTEXT = (
+  hasVideo: boolean
+) => `You are an expert UX consultant. When a user describes their existing app and requests a UX audit${
+  hasVideo
+    ? ", and a video is attached, analyze the user experience and flows shown in the video as well as the text"
+    : ""
+}. Respond using the following structure:
 
 **UX Audit:**
-Summarize the main UX issues or opportunities based on the user's input.
+Summarize the main UX issues or opportunities based on the user's input${
+  hasVideo ? " and the video" : ""
+}.
 
 **Artefact:**
 List the main deliverables or recommendations you would provide as part of the audit.
@@ -77,10 +85,18 @@ Describe the expected impact or value for the user/client if these recommendatio
 
 Format your response in markdown with clear headings for each section.`;
 
-const UI_AUDIT_CONTEXT = `You are an expert UI consultant. When a user describes their existing app and requests a UI audit, respond using the following structure:
+const UI_AUDIT_CONTEXT = (
+  hasVideo: boolean
+) => `You are an expert UI consultant. When a user describes their existing app and requests a UI audit${
+  hasVideo
+    ? ", and a video is attached, analyze the user interface and flows shown in the video as well as the text"
+    : ""
+}. Respond using the following structure:
 
 **UI Audit:**
-Summarize the main UI issues or opportunities based on the user's input.
+Summarize the main UI issues or opportunities based on the user's input${
+  hasVideo ? " and the video" : ""
+}.
 
 **Artefact:**
 List the main deliverables or recommendations you would provide as part of the audit.
@@ -101,6 +117,8 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load client and chat history on mount
   useEffect(() => {
@@ -195,9 +213,41 @@ export default function ChatPage() {
     setMessages([initialMessage]);
   };
 
+  // Helper to extract a frame from video as base64 image
+  async function extractFrameFromVideo(file: File): Promise<string | null> {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.src = URL.createObjectURL(file);
+      video.onloadeddata = () => {
+        video.currentTime = 1;
+      };
+      video.onseeked = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg"));
+        } else {
+          resolve(null);
+        }
+      };
+      video.onerror = () => resolve(null);
+    });
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("video/")) {
+      setVideoFile(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !client) return;
+    if ((!input.trim() && !videoFile) || !client) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -231,13 +281,26 @@ export default function ChatPage() {
       if (isFirstUserMessageForIdea) {
         context = IDEA_CONTEXT;
       } else if (isFirstUserMessageForUXAudit) {
-        context = UX_AUDIT_CONTEXT;
+        context = UX_AUDIT_CONTEXT(!!videoFile);
       } else if (isFirstUserMessageForUIAudit) {
-        context = UI_AUDIT_CONTEXT;
+        context = UI_AUDIT_CONTEXT(!!videoFile);
       } else {
         context = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
       }
-      const response = await fetchGeminiResponse(input, context);
+
+      let imageBase64: string | null = null;
+      let useVision = false;
+      if (videoFile) {
+        imageBase64 = await extractFrameFromVideo(videoFile);
+        useVision = !!imageBase64;
+      }
+
+      const response = await fetchGeminiResponse(
+        input,
+        context,
+        imageBase64,
+        useVision
+      );
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -248,6 +311,8 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setVideoFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Error generating response:", error);
     } finally {
@@ -493,22 +558,31 @@ export default function ChatPage() {
           className="flex items-center gap-3 px-4 mt-4"
         >
           <div className="flex items-center flex-1 bg-[#f8f9fb] rounded-full border border-gray-200 px-4 py-3 focus-within:border-indigo-400 transition-all duration-150 shadow-none">
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer mr-3 flex items-center"
-            >
-              <svg
-                className="w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
+            {client?.type === "improvement" && (
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer mr-3 flex items-center"
               >
-                <path d="M16.5 13.5L7.5 4.5M21 15.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h3" />
-                <path d="M16.5 13.5a2.121 2.121 0 1 1-3-3l7.5-7.5a2.121 2.121 0 0 1 3 3l-7.5 7.5z" />
-              </svg>
-              <input id="file-upload" type="file" className="hidden" disabled />
-            </label>
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M16.5 13.5L7.5 4.5M21 15.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h3" />
+                  <path d="M16.5 13.5a2.121 2.121 0 1 1-3-3l7.5-7.5a2.121 2.121 0 0 1 3 3l-7.5 7.5z" />
+                </svg>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </label>
+            )}
             <input
               type="text"
               value={input}
@@ -516,9 +590,14 @@ export default function ChatPage() {
               placeholder="Type your message..."
               className="flex-1 border-none outline-none bg-transparent text-gray-900 text-base placeholder-gray-400"
             />
+            {videoFile && (
+              <span className="ml-2 text-xs text-gray-500">
+                {videoFile.name}
+              </span>
+            )}
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || (!input.trim() && !videoFile)}
               className="ml-3 inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-400 hover:text-indigo-600 transition disabled:opacity-50 bg-transparent border-none p-0"
               style={{ boxShadow: "none" }}
             >

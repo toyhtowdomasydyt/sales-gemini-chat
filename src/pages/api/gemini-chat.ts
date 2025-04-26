@@ -11,25 +11,49 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { prompt, context } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ error: "Missing prompt" });
+  const { prompt, context, imageBase64 } = req.body;
+  if (!prompt && !imageBase64) {
+    return res.status(400).json({ error: "Missing prompt or image" });
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const chat = model.startChat({
-      history: context
-        ? [
-            {
-              role: "user",
-              parts: [{ text: context }],
-            },
-          ]
-        : [],
-    });
-    const result = await chat.sendMessage(prompt);
-    const response = result.response;
+    const modelName = "gemini-2.0-flash";
+    const model = genAI.getGenerativeModel({ model: modelName });
+    let result, response;
+    if (imageBase64) {
+      // Vision model: send image and prompt
+      result = await model.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: context ? context + "\n" + prompt : prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageBase64.split(",")[1],
+                },
+              },
+            ],
+          },
+        ],
+      });
+      response = result.response;
+    } else {
+      // Flash model: text only
+      const chat = model.startChat({
+        history: context
+          ? [
+              {
+                role: "user",
+                parts: [{ text: context }],
+              },
+            ]
+          : [],
+      });
+      result = await chat.sendMessage(prompt);
+      response = result.response;
+    }
     return res.status(200).json({ text: response.text() });
   } catch (error: unknown) {
     if (error instanceof Error) {
