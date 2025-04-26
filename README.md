@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sales Gemini Chat
 
-## Getting Started
+A chat application for sales teams to help provide information to clients about their app ideas or app improvements using the Gemini API.
 
-First, run the development server:
+## Features
 
+- Client selection (new app idea or app improvement)
+- Audit type selection for new app ideas (UI, UX, General)
+- Predefined questions based on audit type
+- Chat history per client
+- Modern and responsive UI
+- Powered by Google's Gemini API
+
+## Prerequisites
+
+- Node.js 18+ installed
+- A Google Cloud account with Gemini API access
+- Gemini API key
+
+## Setup
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd sales-gemini-chat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file in the root directory and add your Gemini API key:
+```
+GOOGLE_API_KEY=your_gemini_api_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+The application will be available at `http://localhost:3000`
 
-To learn more about Next.js, take a look at the following resources:
+## Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Open the application and enter the client's name
+2. Select whether the client has a new app idea or needs app improvement
+3. For new app ideas:
+   - Select the type of audit (UI, UX, or General)
+   - The system will provide predefined questions
+   - Copy these questions and send them to the client
+   - Paste the client's responses in the chat
+4. For app improvements:
+   - Start the conversation directly
+   - The AI will help analyze and provide suggestions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+The application is ready to be deployed to Vercel:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push your code to a Git repository
+2. Connect your repository to Vercel
+3. Add your environment variables in the Vercel dashboard
+4. Deploy!
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Technologies Used
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Google Gemini API
+- Vercel (for deployment)
