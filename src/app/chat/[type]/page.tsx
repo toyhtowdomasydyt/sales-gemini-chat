@@ -94,16 +94,25 @@ export default function ChatPage() {
       if (chatHistory) {
         setMessages(JSON.parse(chatHistory));
       }
+      // Set auditType if present
+      if (parsedClient.auditType) setAuditType(parsedClient.auditType);
     }
   }, []);
 
-  // Persist chat history to localStorage whenever messages change
+  // Persist chat history and update client updatedAt in clients list
   useEffect(() => {
     if (client) {
       localStorage.setItem(
         `chatHistory:${client.id}`,
         JSON.stringify(messages)
       );
+      // Update updatedAt in clients list
+      const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+      const idx = clients.findIndex((c: Client) => c.id === client.id);
+      if (idx !== -1) {
+        clients[idx] = { ...clients[idx], updatedAt: new Date() };
+        localStorage.setItem("clients", JSON.stringify(clients));
+      }
     }
   }, [messages, client]);
 
@@ -111,8 +120,25 @@ export default function ChatPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // When auditType is selected, persist to client and clients list
   const handleAuditTypeSelect = (type: AuditType, brief: string) => {
     setAuditType(type);
+    if (client) {
+      const updatedClient = {
+        ...client,
+        auditType: type,
+        updatedAt: new Date(),
+      };
+      setClient(updatedClient);
+      localStorage.setItem("currentClient", JSON.stringify(updatedClient));
+      // Update in clients list
+      const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+      const idx = clients.findIndex((c: Client) => c.id === client.id);
+      if (idx !== -1) {
+        clients[idx] = updatedClient;
+        localStorage.setItem("clients", JSON.stringify(clients));
+      }
+    }
     const initialMessage: Message = {
       id: Date.now().toString(),
       clientId: client!.id,
