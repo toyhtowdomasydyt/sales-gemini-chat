@@ -48,6 +48,48 @@ const AUDIT_TYPES = [
   },
 ];
 
+const IDEA_CONTEXT = `You are an expert product consultant. When a user describes a new app idea, respond using the following structure:
+
+**Just an Idea:**
+Summarize the user's idea in your own words.
+
+**Solution:**
+Describe a possible solution or approach to realize the idea.
+
+**Artefact:**
+List the main deliverables or features that would be created.
+
+**Outcome:**
+Describe the expected impact or value for the user/client.
+
+Format your response in markdown with clear headings for each section.`;
+
+const UX_AUDIT_CONTEXT = `You are an expert UX consultant. When a user describes their existing app and requests a UX audit, respond using the following structure:
+
+**UX Audit:**
+Summarize the main UX issues or opportunities based on the user's input.
+
+**Artefact:**
+List the main deliverables or recommendations you would provide as part of the audit.
+
+**Outcome:**
+Describe the expected impact or value for the user/client if these recommendations are implemented.
+
+Format your response in markdown with clear headings for each section.`;
+
+const UI_AUDIT_CONTEXT = `You are an expert UI consultant. When a user describes their existing app and requests a UI audit, respond using the following structure:
+
+**UI Audit:**
+Summarize the main UI issues or opportunities based on the user's input.
+
+**Artefact:**
+List the main deliverables or recommendations you would provide as part of the audit.
+
+**Outcome:**
+Describe the expected impact or value for the user/client if these recommendations are implemented.
+
+Format your response in markdown with clear headings for each section.`;
+
 function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -165,15 +207,37 @@ export default function ChatPage() {
       createdAt: new Date(),
     };
 
+    const isFirstUserMessageForIdea =
+      client.type === "new_idea" &&
+      messages.length === 1 &&
+      messages[0].role === "assistant";
+    const isFirstUserMessageForUXAudit =
+      client.type === "improvement" &&
+      client.auditType === "ux" &&
+      ((messages.length === 1 && messages[0].role === "assistant") ||
+        messages.length === 0);
+    const isFirstUserMessageForUIAudit =
+      client.type === "improvement" &&
+      client.auditType === "ui" &&
+      ((messages.length === 1 && messages[0].role === "assistant") ||
+        messages.length === 0);
+
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await fetchGeminiResponse(
-        input,
-        messages.map((m) => `${m.role}: ${m.content}`).join("\n")
-      );
+      let context;
+      if (isFirstUserMessageForIdea) {
+        context = IDEA_CONTEXT;
+      } else if (isFirstUserMessageForUXAudit) {
+        context = UX_AUDIT_CONTEXT;
+      } else if (isFirstUserMessageForUIAudit) {
+        context = UI_AUDIT_CONTEXT;
+      } else {
+        context = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
+      }
+      const response = await fetchGeminiResponse(input, context);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
