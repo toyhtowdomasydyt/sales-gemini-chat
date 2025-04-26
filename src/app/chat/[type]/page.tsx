@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { AuditType, Message, Client } from "@/types";
 import { fetchGeminiResponse } from "@/lib/gemini";
+import ReactMarkdown from "react-markdown";
 
 const AUDIT_TYPES = [
   {
@@ -316,9 +317,75 @@ export default function ChatPage() {
                 } border border-gray-200 shadow-sm`}
                 style={{ maxWidth: "80%" }}
               >
-                <div className="text-gray-900 text-base whitespace-pre-line leading-relaxed">
-                  {message.content}
-                </div>
+                {message.role === "assistant" ? (
+                  <div
+                    className="prose max-w-none text-gray-900 text-base leading-relaxed break-words"
+                    style={{
+                      wordBreak: "break-word",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    <ReactMarkdown
+                      components={{
+                        table: (props) => (
+                          <div className="overflow-x-auto">
+                            <table
+                              className="min-w-[600px] border-collapse"
+                              {...props}
+                            />
+                          </div>
+                        ),
+                        th: (props) => (
+                          <th
+                            className="border px-2 py-1 bg-gray-100 text-xs"
+                            {...props}
+                          />
+                        ),
+                        td: (props) => (
+                          <td
+                            className="border px-2 py-1 align-top text-xs"
+                            {...props}
+                          />
+                        ),
+                        pre: (props) => (
+                          <pre
+                            className="bg-gray-100 rounded p-2 overflow-x-auto text-xs !mb-2"
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                            }}
+                            {...props}
+                          />
+                        ),
+                        code: (props) => (
+                          <code
+                            className="bg-gray-100 rounded px-1 text-xs"
+                            style={{
+                              wordBreak: "break-word",
+                              overflowWrap: "anywhere",
+                            }}
+                            {...props}
+                          />
+                        ),
+                        p: (props) => (
+                          <p className="mb-2 last:mb-0" {...props} />
+                        ),
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div
+                    className="text-gray-900 text-base whitespace-pre-line leading-relaxed break-words overflow-x-auto"
+                    style={{
+                      wordBreak: "break-word",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {message.content}
+                  </div>
+                )}
                 <div className="text-xs text-gray-400 text-right mt-2">
                   {formatTime(new Date(message.createdAt))}
                 </div>
